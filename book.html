@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Book Management System</title>
+	<script src="js/angular.js"></script>
+	<script src="js/angular-route.min.js"></script>
+	<link rel="stylesheet" href="bootstrap.min.css" />
+	<style tyle="text/css">
+		body{
+			background: #f3f3da;
+		}
+		h1{
+			text-align: center;
+			color: #18a2c3;
+			margin-top: 40px;
+			background: #a6d6e6;
+			width: 100%;
+			height: 65px;
+			line-height: 65px;
+		}
+		.table{
+			text-align: center;
+			margin-top: 25px;
+		}
+
+		.table tr{
+			width: 100%;
+		}
+		.search{
+			height:50px;
+			display: flex;
+			align-items: center;
+			margin:45px 0;
+		}
+		.search select{
+			height: 30px;
+			border-radius: 5px;
+		}
+		.search input{
+			margin-left: 5px;
+		}
+		.search input:nth-child(3){
+			margin-left: 100px;
+		}
+		.search button{
+			margin-left: 5px;
+		}
+
+	</style>
+</head>
+<body ng-app="myapp" ng-controller="controller">
+	<h1>图书管理系统</h1>
+		<div class="search">
+			<select ng-model="currentVal" >
+				<option value="bookId">图书编号</option>
+				<option value="bookName">书名</option>
+				<option value="author">作者</option>
+			</select>
+
+			<input type="text" ng-model="inputVal" class="form-control" />
+
+			<input type="text" ng-model="inputValNum" class="form-control" placeholder="图书编号" />
+			<input type="text" ng-model="inputValName" class="form-control" placeholder="书名"/>
+			<input type="text" ng-model="inputValprice" class="form-control" placeholder="价格"/>
+
+			<input type="text" ng-model="inputValAuthor" class="form-control" placeholder="作者"/>
+			<button class="btn btn-primary" ng-click="add()">添加</button>
+		</div>
+	<table class="table table-bordered  table-hover  table-striped row">
+		<tr style="background:#9ad" class="">
+			<td ng-click="sortcurr(0)" class="col-md-2">序号</td>
+			<td ng-click="sortcurr(1)" class="col-md-2">书名</td>
+			<td ng-click="sortcurr(2)" class="col-md-2">价格</td>
+			<td ng-click="sortcurr(3)" class="col-md-2">作者</td>
+			<td class="col-md-2">修改</td>
+			<td class="col-md-2">删除</td>
+
+		</tr>
+		<tr ng-repeat="person in persons| filter:changeType() |orderBy:num:false">
+			<td class="col-md-2">
+				<p ng-bind="person.bookId"></p>
+			</td>
+			<td class="col-md-2">
+				<p ng-bind="person.bookName" ng-show="show"></p>
+				<input type="text" ng-hide="show" class="form-control width " ng-model="person.bookName"/>
+			</td>
+			<td class="col-md-2">
+				<p ng-bind="person.price" ng-show="show"></p>
+				<input type="text" ng-hide="show" class="form-control width " ng-model="person.price"/>
+			</td>
+			<td class="col-md-2">
+				<p ng-bind="person.author" ng-show="show"></p>
+				<input type="text" ng-hide="show" class="form-control width " ng-model="person.author"/>
+			</td>
+			<td class="col-md-2">
+				<a href="#" ng-click="change(person,$index)" ng-show="show">{{del}}</a>
+				<a href="#" ng-click = "update(person,$index)" ng-hide="show" >确定</a>
+				<a href="#" ng-click = "cancle(person,$index)" ng-hide="show" >取消</a>
+			</td>
+			<td class="col-md-2"><a href="#" ng-click="delete(person,$index)">删除</a></td>
+
+		</tr>
+	</table>
+
+</body>
+<script>
+var myapp=angular.module('myapp',[]);
+myapp.service('getUser',['$http',function($http){
+	this.select=function(url,callback){
+		$http.get(url).success(function(a){
+			console.log(1);
+			callback(a);
+		});
+	}
+	this.add=function(url,data,callback){
+		// $http.get(url,{})
+		$http.get(url,data).success(function(a){
+			callback(a);
+		});
+	}
+	this.delete=function(url,data,callback){
+		$http.get(url,data).success(function(a){
+			console.log(11111);
+			callback(a);
+		});
+	}
+	this.update=function(url,data,callback){
+		$http.get(url,data).success(function(a){
+			callback(a);
+		});
+	}
+
+
+}])
+myapp.controller("controller", ['getUser','$scope',function (getUser,$scope) {
+            //数据呈现
+    $scope.show=true;
+    $scope.del='修改';
+    $scope.changeType=function(){
+    	return {[this.currentVal]:this.inputVal};
+    };
+    $scope.currentVal='bookId';
+    getUser.select("db.php?option=select",function(data){
+    	$scope.persons=data;
+    })
+    $scope.add=function(){
+    	if (!this.inputValNum||!this.inputValName||!this.inputValAuthor) {
+			alert("请输入完整参数")
+			return -1;
+		}
+		// 创建对象
+		var newBook = {
+			bookId:this.inputValNum,
+			bookName:this.inputValName,
+			price:this.inputValprice,
+			author:this.inputValAuthor,
+			show:true,
+		}
+
+		this.inputValNum = '';
+		this.inputValName = '';
+		this.inputValAuthor = '';
+		this.inputValprice='';
+    	getUser.add('db.php',{params:{"option":"add","book":newBook}},function(data){
+    		$scope.persons=data;
+    	})
+    }
+    $scope.delete=function(person,index){
+    	getUser.delete('db.php',{params:{"option":"delete",'bookId':person.bookId}},function(data){
+    		console.log(person.bookId);
+
+    		console.log(data);
+    		$scope.persons=data;
+    	})
+    }
+    var changebook={};
+    $scope.change=function(person,index){
+    	this.show=!this.show;
+    	console.log(person);
+    	changebook={
+    		'bookId':person.bookId,
+    		'bookName':person.bookName,
+    		'price':person.price,
+    		'author':person.author
+    	};
+
+    }
+    $scope.update=function(person,index){
+    	console.log(person);
+    	getUser.update('db.php',{params:{"option":"update","book":person}},function(data){
+    		console.log(person.bookId);
+    		console.log(data);
+    		$scope.persons=data;
+    	})
+    }
+	$scope.cancle = function(person,index){
+    	this.show=!this.show;
+    	person.bookId=changebook.bookId;
+    	person.bookName=changebook.bookName;
+    	person.price=changebook.price;
+    	person.author=changebook.author;
+
+	}
+
+
+}])
+
+
+
+
+</script>
+</html>
+
